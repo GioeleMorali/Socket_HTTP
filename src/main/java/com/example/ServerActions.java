@@ -3,7 +3,10 @@ package com.example;
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -32,58 +35,64 @@ public class ServerActions {
         Boolean exit = false;
         String ANSI_GREEN = "\033[1;32m";
         String ANSI_RESET = "\u001B[0m";
-    try {
-         System.out.println(ANSI_GREEN + "Server started" + ANSI_RESET);
-         s = server.accept();
-            in = new BufferedReader(new InputStreamReader(s.getInputStream()));
-            out = new DataOutputStream(s.getOutputStream());
+        try {
             while (!exit) {
-                stringaRicevuta = in.readLine();
-                System.out.println(stringaRicevuta);
-                if (stringaRicevuta.isEmpty()) {
-                    break;
-                }
-                else
-                {
-                    arrayString = stringaRicevuta.split(" ");
-                    if (arrayString.length == 3 && arrayString[2].equals("HTTP/1.1")) {
-                        f = new File ("." + arrayString[1]);
-                        if (f.exists()) {
-                            Response send = new Response();
-                            String stringa = readFile(f);
-                            send.setBody(stringa);
-                            sendResponse(send);
-                            exit=true;
-                        }
-                        else
-                        {
-                            Response send = new Response();
-                            send.setResponseCode("404");
-                            sendResponse(send);
-                            System.out.println("Errore: file non trovato");
-                            exit=true;
-                        }
+                System.out.println(ANSI_GREEN + "Server Started" + ANSI_RESET);
+                this.s = server.accept();
+                this.in = new BufferedReader(new InputStreamReader(this.s.getInputStream()));
+                this.out= new DataOutputStream(new DataOutputStream(s.getOutputStream()));
+                try {
+                    stringaRicevuta = in.readLine();
+                    System.out.println(stringaRicevuta);
+                    if (stringaRicevuta != null && !stringaRicevuta.isEmpty()) {
+                        this.arrayString = stringaRicevuta.split(" ");
+                        if (arrayString.length == 3 && arrayString[2].contains("HTTP")) {
+                            // STRINGA RICEVUTA CORRETTA
+                            f = new File("htdocs/" + arrayString[1]);
+                            if (f.exists()) {
+                                // FILE ESISTE
+                                Response response = new Response();
+                                String textFile = readFile(f, arrayString[1]);
+                                response.setContentType(f);
+                                response.setBody(textFile);
+                                sendResponse(response);
+                            } else {
+                                // FILE NON ESISTE
+                                Response response = new Response();
+                                response.setResponseCode("404");
+                                sendResponse(response);
+                                System.out.println("Errore: file non trovato");
+                            }
+                        } /*
+                           * else {
+                           * // RICHIESTA ERRATA
+                           * Response response = new Response();
+                           * response.setResponseCode("500");
+                           * sendResponse(response);
+                           * System.out.println("Internal Server Error");
+                           * setExit(true);
+                           * }
+                           */
                     }
-                    else
-                    {
-                        Response send = new Response();
-                            send.setCode("500");
-                            sendResponse(send);
-                        System.out.println("Internal Server Error");
-                        exit=true;
-                    }
+                } catch (IOException e) {
+                    System.out.println("Errore generico " + e.getMessage());
+                    s.close();
                 }
             }
-            
-    } catch (Exception e) {
-        System.out.println("Errore generico");
+        } catch (IOException e) {
+            System.out.println("Errore generico " + e.getMessage());
+        }
+        try {
+            s.close();
+        } catch (IOException e) {
+            System.out.println("Errore nella chiusura del socket");
+        }
     }
-
-    close();
-    }
-    public static String readFile(File f){
+    public static String readFile(File f, String ex) throws IOException{
                 String content = "";
-                try {
+                if(ex.equals("html") || ex.equals("htm") || ex.equals("css"))
+                {
+                    try {
                    Scanner myReader = new Scanner(f);
                    while(myReader.hasNextLine()){
                     String data = myReader.nextLine();
@@ -91,10 +100,25 @@ public class ServerActions {
                     System.out.println(data);
                    }
                    myReader.close();
-                } catch (Exception e) {
+                        } catch (Exception e) {
                    System.out.println("Errore");
+                    }
+                }
+                else if(ex.equals("jpeg"))
+                {
+                    try{
+                        InputStream input = new FileInputStream(f);
+                        byte [] buf = new byte[8192];
+                        int n;
+                        while((n = input.read(buf)) != -1){
+                             content += buf + "0" + 0;                                                                                                             
+                        }
+                    }catch(FileNotFoundException e){
+                        System.out.println("Errore");
+                    }
                 }
                 return content;
+                
     }
     public void sendResponse(Response r)
     {
