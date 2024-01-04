@@ -10,6 +10,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Scanner;
 
@@ -25,8 +26,10 @@ public class ServerActions {
     public ServerActions (){
         try {
             server = new ServerSocket(8080);
+            System.out.println("Server in ascolto sulla porta 8080");
          } catch (IOException e) {
             e.printStackTrace();
+            System.out.println("Errore nella creazione del server");
         }
     }
 
@@ -50,29 +53,27 @@ public class ServerActions {
                             // STRINGA RICEVUTA CORRETTA
                             f = new File("htdocs/" + arrayString[1]);
                             if (f.exists()) {
+                            if (arrayString[1].split("\\.")[1].equals("jpeg")) {
+                                invioImmagine(f);
+                            }else{
                                 // FILE ESISTE
                                 Response response = new Response();
-                                String textFile = readFile(f, arrayString[1]);
+                                String textFile = readFile(f, arrayString[1].split("\\.")[1]);
                                 response.setContentType(f);
                                 response.setBody(textFile);
                                 sendResponse(response);
-                            } else {
-                                // FILE NON ESISTE
+                            }} else {
+                                // FILE NON ESISTE, ERRORE 404 NOT FOUND, INVIO PAGINA DI ERRORE
                                 Response response = new Response();
+                                File fileErrore = new File("htdocs/404.html");
+                                String fErrore = readFile(fileErrore, "html");
                                 response.setResponseCode("404");
+                                response.setContentType(fileErrore);
+                                response.setBody(fErrore);
                                 sendResponse(response);
                                 System.out.println("Errore: file non trovato");
                             }
-                        } /*
-                           * else {
-                           * // RICHIESTA ERRATA
-                           * Response response = new Response();
-                           * response.setResponseCode("500");
-                           * sendResponse(response);
-                           * System.out.println("Internal Server Error");
-                           * setExit(true);
-                           * }
-                           */
+                        }
                     }
                 } catch (IOException e) {
                     System.out.println("Errore generico " + e.getMessage());
@@ -104,19 +105,6 @@ public class ServerActions {
                    System.out.println("Errore");
                     }
                 }
-                else if(ex.equals("jpeg"))
-                {
-                    try{
-                        InputStream input = new FileInputStream(f);
-                        byte [] buf = new byte[8192];
-                        int n;
-                        while((n = input.read(buf)) != -1){
-                             content += buf + "0" + 0;                                                                                                             
-                        }
-                    }catch(FileNotFoundException e){
-                        System.out.println("Errore");
-                    }
-                }
                 return content;
                 
     }
@@ -141,5 +129,27 @@ public class ServerActions {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+    public void invioImmagine(File f) throws IOException{
+        // INVIO IMMAGINE AL CLIENT CON HEADER HTTP CORRETTI, SE NON ESISTE INVIO ERRORE 404 NOT FOUND CON PAGINA HTML
+        out.writeBytes("HTTP/1.1 200 OK\r\n");
+        System.out.println("HTTP/1.1 200 OK\r\n");
+        out.writeBytes("Date: " + LocalDateTime.now().toString() + "\r\n");
+        System.out.println("Date: " + LocalDateTime.now().toString() + "\r\n");
+        out.writeBytes("Server: Gioele-server + '\n");
+        System.out.println("Server: Gioele-server + '\n");
+        out.writeBytes("Content-Type: image/jpeg\r\n");
+        System.out.println("Content-Type: image/jpeg\r\n");
+        out.writeBytes("Content-Length: " + f.length() + "\n");
+        System.out.println("Content-Length: " + f.length() + "\n");
+        out.writeBytes("\n");
+        InputStream in = new FileInputStream(f);
+        byte[] buffer = new byte[98304];
+        int n;
+        while ((n = in.read(buffer)) != -1) {
+            out.write(buffer, 0, n);
+            
+        }
+        in.close();
     }
 }
