@@ -69,7 +69,7 @@ public class Response {
     public void setDate(String date) {
         this.date = date;
     }
-     public ArrayList<String> getData() {
+     public ArrayList<String> getData(File f) {
         String stringa;
         stringa = protocol + " " + code + " " + phrase + "\n";
         data.add(stringa);
@@ -79,35 +79,11 @@ public class Response {
         data.add(stringa);
         stringa = "Content-Type: " + getContentType() + ";charset=UTF-8" + "\n";
         data.add(stringa);
-        stringa = "Content-Length: " + body.length() + "\n";
+        stringa = "Content-Length: " + f.length() + "\n";
         data.add(stringa);
         stringa = "\n";
         data.add(stringa);
-        if (body.length() > 0) {
-            data.add(body);
-            stringa = "\n";
-            data.add(stringa);
-        }
         return data;
-    }
-
-    public void setData(ArrayList<String> data) {
-        this.data = data;
-    }
-    public String getProtocol() {
-        return protocol;
-    }
-
-    public void setProtocol(String protocol) {
-        this.protocol = protocol;
-    }
-    public String getBody() {
-        return body;
-    }
-
-    public void setBody(String body) {
-        this.body = body;
-
     }
     public void setContentType(File f)
     {
@@ -126,6 +102,10 @@ public class Response {
             
             case "css":
             this.contentType = "text/css";
+            break;
+
+            case "json":
+            this.contentType = "application/json";
             break;
         }
     }
