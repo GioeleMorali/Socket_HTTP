@@ -75,7 +75,7 @@ public class ServerActions {
                             }
                          }
                         } 
-                    }catch (IOException e) {
+                    }catch (Exception e) {
                     System.out.println("Errore generico " + e.getMessage());
                     s.close();
                 }
@@ -141,8 +141,8 @@ public class ServerActions {
         Classe c1 = new Classe(5, "A", "Aula 1", alunni);
 
         ObjectMapper mapper = new ObjectMapper();
-        mapper.writeValue(new File("htdocs/classe.json"), c1);
-        response.setContentType(new File("htdocs/classe.json"));
-        sendResponse(response, new File("htdocs/classe.json"));
+        mapper.writeValue(new File("/home/informatica/Socket_HTTP/htdocs/classe.json"), c1);
+        response.setContentType(new File("/home/informatica/Socket_HTTP/htdocs/classe.json"));
+        sendResponse(response, new File("/home/informatica/Socket_HTTP/htdocs/classe.json"));
         }
 }
